@@ -27,15 +27,17 @@ async function createBranch() {
 }
 async function pushBranch(){
   try {
+    // Initialize a Git repository
     await git.init();
 
+    // Ask if the user wants to exclude any files from the push
     const { excludeFiles } = await inquirer.prompt({
       type: 'input',
       name: 'excludeFiles',
       message: 'Enter file(s) to exclude from the push (comma-separated, or leave empty):',
     });
 
-    
+    // Add files to the staging area, excluding any specified files
     if (excludeFiles) {
       const filesToExclude = excludeFiles.split(',').map(file => file.trim());
       const allFiles = await git.status();
@@ -45,6 +47,7 @@ async function pushBranch(){
       await git.add('.');
     }
 
+    // Commit the changes
     const { commitMessage } = await inquirer.prompt({
       type: 'input',
       name: 'commitMessage',
@@ -53,19 +56,43 @@ async function pushBranch(){
 
     await git.commit(commitMessage);
 
+    // Ask for the remote repository URL
     const { remoteUrl } = await inquirer.prompt({
       type: 'input',
       name: 'remoteUrl',
       message: 'Enter the remote repository URL (e.g., GitHub):',
     });
 
+    // Check if the "origin" remote already exists
+    const existingRemotes = await git.getRemotes(true);
+    const originExists = existingRemotes.some(remote => remote.name === 'origin');
+
+    if (!originExists) {
+      // Add the "origin" remote if it doesn't exist
+      await git.addRemote('origin', remoteUrl);
+    } else {
+      // Ask if the user wants to update the "origin" remote
+      const { updateOrigin } = await inquirer.prompt({
+        type: 'confirm',
+        name: 'updateOrigin',
+        message: 'The "origin" remote already exists. Do you want to update it?',
+      });
+
+      if (updateOrigin) {
+        // Update the "origin" remote
+        await git.removeRemote('origin');
+        await git.addRemote('origin', remoteUrl);
+      }
+    }
+
+    // Ask for the branch to push
     const { branchName } = await inquirer.prompt({
       type: 'input',
       name: 'branchName',
       message: 'Enter the branch to push (e.g., main):',
     });
 
-    await git.addRemote('origin', remoteUrl);
+    // Push the changes to the specified branch
     await git.push('origin', branchName);
 
     console.log('Initialized, added, committed, and pushed to the remote repository successfully.');
