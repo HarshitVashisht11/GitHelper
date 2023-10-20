@@ -1,5 +1,6 @@
 import simpleGit from 'simple-git';
 import inquirer from 'inquirer';
+import chalk from 'chalk';
 const git = simpleGit();
 
 async function listBranches() {
@@ -117,6 +118,7 @@ async function switchBranch(){
 
 
 async function main() {
+  console.log(chalk.blueBright('Welcome to Git Helper'))
   const choices = ['List Branches', 'Create Branch', 'Switch Branch' ,'Push Your Code', 'Quit'];
   const { action } = await inquirer.prompt({
     type: 'list',
